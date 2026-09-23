@@ -1,55 +1,25 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import Check from "./components/Check";
+import { loadTodos, storageKey, type Todo } from "./loadTodos";
 
-type Todo = { id: string; text: string; completed: boolean };
 type Filter = "All" | "Active" | "Completed";
-const storageKey = "daily-todos-v1";
-function loadTodos(): Todo[] {
-  try {
-    const saved: unknown = JSON.parse(localStorage.getItem(storageKey) ?? "[]");
-    return Array.isArray(saved)
-      ? saved.filter(
-          (item): item is Todo =>
-            item !== null &&
-            typeof item === "object" &&
-            typeof item.id === "string" &&
-            typeof item.text === "string" &&
-            typeof item.completed === "boolean",
-        )
-      : [];
-  } catch {
-    return [];
-  }
-}
-function Check() {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="m5 12 4 4L19 6" />
-    </svg>
-  );
-}
+
 export default function App() {
   const [todos, setTodos] = useState<Todo[]>(loadTodos);
   const [text, setText] = useState("");
+  const [inputError, setInputError] = useState("");
   const [filter, setFilter] = useState<Filter>("All");
   const [storageError, setStorageError] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const completed = todos.filter((todo) => todo.completed).length;
   const remaining = todos.length - completed;
+
   const visible = todos.filter(
     (todo) =>
       filter === "All" ||
       (filter === "Completed" ? todo.completed : !todo.completed),
   );
+
   useEffect(() => {
     try {
       localStorage.setItem(storageKey, JSON.stringify(todos));
@@ -60,7 +30,12 @@ export default function App() {
   }, [todos]);
   function addTodo(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!text.trim()) return;
+    if (!text.trim()) {
+      setInputError("Please enter a task.");
+      inputRef.current?.focus();
+      return;
+    }
+    setInputError("");
     setTodos((previous) => [
       ...previous,
       { id: crypto.randomUUID(), text: text.trim(), completed: false },
@@ -118,19 +93,25 @@ export default function App() {
               ref={inputRef}
               id="new-todo"
               value={text}
-              onChange={(event) => setText(event.target.value)}
+              onChange={(event) => {
+                setText(event.target.value);
+                if (event.target.value.trim()) setInputError("");
+              }}
+              aria-invalid={Boolean(inputError)}
+              aria-describedby={inputError ? "task-input-error" : undefined}
               placeholder="What's on your mind?"
               maxLength={500}
               autoComplete="off"
             />
-            <button
-              className="add-button"
-              type="submit"
-              disabled={!text.trim()}
-            >
+            <button className="add-button" type="submit">
               <span aria-hidden="true">+</span> Add task
             </button>
           </form>
+          {inputError && (
+            <p id="task-input-error" className="input-error" role="alert">
+              {inputError}
+            </p>
+          )}
           <div className="list-toolbar">
             <div className="filters" aria-label="Filter tasks">
               {(["All", "Active", "Completed"] as const).map((value) => (
