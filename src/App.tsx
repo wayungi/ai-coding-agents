@@ -1,28 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Check from "./components/Check";
+import { loadTodos, storageKey, type Todo } from "./loadTodos";
 
-type Todo = { id: string; text: string; completed: boolean };
 type Filter = "All" | "Active" | "Completed";
-
-const storageKey = "daily-todos-v1";
-
-function loadTodos(): Todo[] {
-  try {
-    const saved: unknown = JSON.parse(localStorage.getItem(storageKey) ?? "[]");
-    return Array.isArray(saved)
-      ? saved.filter(
-          (item): item is Todo =>
-            item !== null &&
-            typeof item === "object" &&
-            typeof item.id === "string" &&
-            typeof item.text === "string" &&
-            typeof item.completed === "boolean",
-        )
-      : [];
-  } catch {
-    return [];
-  }
-}
 
 export default function App() {
   const [todos, setTodos] = useState<Todo[]>(loadTodos);
@@ -32,11 +12,13 @@ export default function App() {
   const inputRef = useRef<HTMLInputElement>(null);
   const completed = todos.filter((todo) => todo.completed).length;
   const remaining = todos.length - completed;
+
   const visible = todos.filter(
     (todo) =>
       filter === "All" ||
       (filter === "Completed" ? todo.completed : !todo.completed),
   );
+  
   useEffect(() => {
     try {
       localStorage.setItem(storageKey, JSON.stringify(todos));
