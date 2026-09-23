@@ -15,3 +15,14 @@ npm run dev
 npm run build
 npm run preview
 ```
+
+## Formatting
+
+Prettier uses its default settings.
+
+```sh
+npm run format
+npm run format:check
+```
+
+If you use the Prettier editor extension, it will use the project's installed version and configuration.
